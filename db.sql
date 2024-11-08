@@ -14,6 +14,7 @@ CREATE TABLE public.transaction_categories (
 CREATE TABLE public.accounts (
 	account_id int8 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1 NO CYCLE) NOT NULL,
 	name varchar NOT NULL,
+	balance int8 NULL,
 	CONSTRAINT account_pk PRIMARY KEY (account_id)
 );
 
@@ -32,3 +33,16 @@ CREATE TABLE public.auths (
 	CONSTRAINT auths_unique UNIQUE (account_id),
 	CONSTRAINT auths_unique_username UNIQUE (username)
 );
+
+CREATE TABLE public."transaction" (
+    transaction_id int8 GENERATED ALWAYS AS IDENTITY NOT NULL,
+    transaction_category_id int8 NULL,
+    account_id int8 NULL,
+    from_account_id int8 NULL,
+    to_account_id int8 NULL,
+    amount int8 DEFAULT 0 NULL,
+    transaction_date timestamp NULL,
+    CONSTRAINT transaction_pk PRIMARY KEY (transaction_id),
+    CONSTRAINT fk_transaction_category FOREIGN KEY (transaction_category_id) REFERENCES public.transaction_category (transaction_category_id)
+);
+

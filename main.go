@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
+	"github.com/gin-contrib/cors"
 	"gorm.io/gorm"
 )
 
@@ -32,11 +33,32 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(cors.New(cors.Config{
+        AllowOrigins: []string{"http://localhost:8082", "http://localhost:5173"}, // Update if your frontend runs on a different port
+        AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE"},
+        AllowHeaders:     []string{"Authorization", "Content-Type"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: true,
+    }))
+
 	// grouping route with /auth
 	authHandler := handler.NewAuth(db, []byte(signingKey))
 	authRoute := r.Group("/auth")
 	authRoute.POST("/login", authHandler.Login)
 	authRoute.POST("/upsert", authHandler.Upsert)
+
+	accountHandler := handler.NewAccount(db)
+	accountRoutes := r.Group("/account")
+	accountRoutes.POST("/create", accountHandler.Create)
+	accountRoutes.GET("/read/:id", accountHandler.Read)
+	accountRoutes.PATCH("/update/:id", accountHandler.Update)
+	accountRoutes.DELETE("/delete/:id", accountHandler.Delete)
+	accountRoutes.GET("/list", accountHandler.List)
+	accountRoutes.POST("/topup", accountHandler.TopUp)
+	accountRoutes.GET("/balance", middleware.AuthMiddleware(signingKey), accountHandler.Balance)
+	accountRoutes.GET("/my", middleware.AuthMiddleware(signingKey), accountHandler.My)
+	accountRoutes.POST("/transfer", middleware.AuthMiddleware(signingKey), accountHandler.Transfer)
+	accountRoutes.GET("/mutation", middleware.AuthMiddleware(signingKey), accountHandler.MutationList)
 
 	// grouping route with /transcat
 	transcatHandler := handler.NewTransactionCategories(db)
@@ -47,20 +69,12 @@ func main() {
 	transcatRoutes.DELETE("/delete/:id", transcatHandler.Delete)
 	transcatRoutes.GET("/list", transcatHandler.List)
 
-	accountHandler := handler.NewAccount(db)
-	accountRoutes := r.Group("/account")
-	accountRoutes.POST("/create", accountHandler.Create)
-	accountRoutes.GET("/read/:id", accountHandler.Read)
-	accountRoutes.PATCH("/update/:id", accountHandler.Update)
-	accountRoutes.DELETE("/delete/:id", accountHandler.Delete)
-	accountRoutes.GET("/list", accountHandler.List)
-	accountRoutes.POST("/topup", accountHandler.TopUp)
-	accountRoutes.POST("/balance", accountHandler.Balance)
+	transactionHandler := handler.NewTransactionHandler(db)
+	transactionRoutes := r.Group("/transaction")
+	transactionRoutes.POST("/new", transactionHandler.NewTransaction)
+	transactionRoutes.GET("/list/:account_id", transactionHandler.TransactionList)
 
-	accountRoutes.GET("/my", middleware.AuthMiddleware(signingKey), accountHandler.My)
-
-
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	r.Run(":8081") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
 
 func NewDatabase() *gorm.DB {

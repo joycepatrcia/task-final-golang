@@ -39,11 +39,12 @@ func (a *authImplement) Login(c *gin.Context) {
 	payload := authLoginPayload{}
 
 	// parsing JSON payload to struct model
-	err := c.BindJSON(&payload)
+	err := c.ShouldBindJSON(&payload)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"error": err,
 		})
+		fmt.Println("error payload")
 		return
 	}
 
@@ -56,6 +57,7 @@ func (a *authImplement) Login(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error": "Login not valid",
 			})
+			fmt.Println("error db")
 			return
 		}
 
@@ -81,6 +83,9 @@ func (a *authImplement) Login(c *gin.Context) {
 		})
 		return
 	}
+
+	// c.SetSameSite(http.SameSiteLaxMode) // Set SameSite attribute (for cross-origin requests)
+	// c.SetCookie("auth_token", token, 3600*72, "/", "",false,true)
 
 	// Success response
 	c.JSON(http.StatusOK, gin.H{
@@ -117,7 +122,7 @@ func (a *authImplement) Upsert(c *gin.Context) {
 	}
 
 	// Check AccountID is valid
-	var account model.TransactionCategories
+	var account model.Account
 	if err := a.db.First(&account, payload.AccountID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
