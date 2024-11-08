@@ -15,8 +15,7 @@ type Transaction struct {
 }
 
 
-// Menentukan nama tabel yang benar
 func (Transaction) TableName() string {
-    return "transaction" // Pastikan nama tabelnya sesuai
+    return "transaction" 
 }
 

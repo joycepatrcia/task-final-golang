@@ -5,8 +5,6 @@ type TransactionCategories struct {
     Name             string `json:"name" gorm:"column:name"`
 }
 
-
-
 // func (Account) TableName() string {
 // 	return "accounts"
 // }

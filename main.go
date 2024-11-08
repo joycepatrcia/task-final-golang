@@ -60,7 +60,6 @@ func main() {
 	accountRoutes.POST("/transfer", middleware.AuthMiddleware(signingKey), accountHandler.Transfer)
 	accountRoutes.GET("/mutation", middleware.AuthMiddleware(signingKey), accountHandler.MutationList)
 
-	// grouping route with /transcat
 	transcatHandler := handler.NewTransactionCategories(db)
 	transcatRoutes := r.Group("/transcat")
 	transcatRoutes.POST("/create", transcatHandler.Create)
@@ -74,7 +73,7 @@ func main() {
 	transactionRoutes.POST("/new", transactionHandler.NewTransaction)
 	transactionRoutes.GET("/list/:account_id", transactionHandler.TransactionList)
 
-	r.Run(":8081") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	r.Run(":8081") 
 }
 
 func NewDatabase() *gorm.DB {

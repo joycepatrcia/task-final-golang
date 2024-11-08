@@ -173,9 +173,8 @@ func (a *authImplement) createJWT(auth *model.Auth) (string, error) {
 	claims["auth_id"] = auth.AuthID
 	claims["account_id"] = auth.AccountID
 	claims["username"] = auth.Username
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix() // Token expires in 72 hours
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix() 
 
-	// Encode
 	tokenString, err := token.SignedString(a.signingKey)
 	if err != nil {
 		return "", err

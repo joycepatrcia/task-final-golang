@@ -95,10 +95,8 @@ func (a *transactionCatImplement) Update(c *gin.Context) {
         return
     }
 
-    // get id from url account/update/5, 5 will be the id
     id := c.Param("id")
 
-    // Find first data based on id and put to account model
     transactcat := model.TransactionCategories{}
     result := a.db.First(&transactcat, "transaction_category_id = ?", id)
     if result.Error != nil {
@@ -116,7 +114,7 @@ func (a *transactionCatImplement) Update(c *gin.Context) {
 
     // Update data
     transactcat.Name = payload.Name
-    updateResult := a.db.Save(&transactcat) // Save the updated transaction category
+    updateResult := a.db.Save(&transactcat) 
     if updateResult.Error != nil {
         c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
             "error": updateResult.Error.Error(),
@@ -127,13 +125,12 @@ func (a *transactionCatImplement) Update(c *gin.Context) {
     // Success response
     c.JSON(http.StatusOK, gin.H{
         "message": "Update success",
-        "data":    transactcat, // Return the updated data
+        "data":    transactcat, 
     })
 }
 
 
 func (a *transactionCatImplement) Delete(c *gin.Context) {
-	// get id from url account/delete/5, 5 will be the id
 	id := c.Param("id")
 
 	// Delete the data based on id
