@@ -86,6 +86,7 @@ func (a *accountImplement) Read(c *gin.Context) {
 func (a *accountImplement) Update(c *gin.Context) {
 	payload := model.Account{}
 
+	// Bind the incoming JSON to the payload
 	err := c.BindJSON(&payload)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
@@ -96,12 +97,13 @@ func (a *accountImplement) Update(c *gin.Context) {
 
 	id := c.Param("id")
 
+	// Retrieve the existing account by ID
 	account := model.Account{}
 	result := a.db.First(&account, "account_id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"error": "Not found",
+				"error": "Account not found",
 			})
 			return
 		}
@@ -111,14 +113,30 @@ func (a *accountImplement) Update(c *gin.Context) {
 		return
 	}
 
-	// Update data
-	account.Name = payload.Name
-	a.db.Save(account)
+	// Update fields only if they are present in the payload
+	if payload.Name != "" {
+		account.Name = payload.Name
+	}
 
+	// Check if Balance is provided and is a valid number
+	if payload.Balance != 0 {
+		account.Balance = payload.Balance
+	}
+
+	// Save the updated account information in the database
+	if err := a.db.Save(&account).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update account",
+		})
+		return
+	}
+
+	// Return success response
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Update success",
+		"message": "Update successful",
 	})
 }
+
 
 func (a *accountImplement) Delete(c *gin.Context) {
 	id := c.Param("id")

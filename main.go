@@ -34,7 +34,7 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-        AllowOrigins: []string{"http://localhost:8082", "http://localhost:5173"}, // Update if your frontend runs on a different port
+        AllowOrigins: []string{"http://localhost:8082", "http://localhost:5173"},
         AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE"},
         AllowHeaders:     []string{"Authorization", "Content-Type"},
         ExposeHeaders:    []string{"Content-Length"},
@@ -46,6 +46,7 @@ func main() {
 	authRoute := r.Group("/auth")
 	authRoute.POST("/login", authHandler.Login)
 	authRoute.POST("/upsert", authHandler.Upsert)
+	authRoute.POST("/change-password", middleware.AuthMiddleware(signingKey), authHandler.ChangePassword)
 
 	accountHandler := handler.NewAccount(db)
 	accountRoutes := r.Group("/account")

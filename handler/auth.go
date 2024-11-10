@@ -16,6 +16,7 @@ import (
 type AuthInterface interface {
 	Login(*gin.Context)
 	Upsert(*gin.Context)
+	ChangePassword(*gin.Context)
 }
 
 type authImplement struct {
@@ -182,4 +183,56 @@ func (a *authImplement) createJWT(auth *model.Auth) (string, error) {
 
 	// Return the token
 	return tokenString, nil
+}
+
+func (a *authImplement) ChangePassword(c *gin.Context) {
+	var req struct {
+		OldPassword        string `json:"oldPassword" binding:"required"`
+		NewPassword        string `json:"newPassword" binding:"required"`
+		ConfirmNewPassword string `json:"confirmPassword" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid input"})
+		return
+	}
+
+	// Validate passwords match
+	if req.NewPassword != req.ConfirmNewPassword {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Passwords do not match"})
+		return
+	}
+
+	accountID, exists := c.Get("account_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Account ID not found"})
+		return
+	}
+
+	//Check if the old password is correct
+	var auth model.Auth
+	if err := a.db.Where("account_id = ?", accountID).First(&auth).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid account"})
+		return
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(req.OldPassword))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Old password is incorrect"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to hash password"})
+		return
+	}
+
+	// Update password in database
+	if err := a.db.Model(&auth).Where("account_id = ?", accountID).Update("password", string(hashedPassword)).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
 }
